@@ -1,9 +1,9 @@
-import logging
 import asyncio
-import aiofiles
-from utils import get_args
+import logging
 import json
 
+import aiofiles
+from utils import get_args
 
 
 async def tcp_echo_client(host, port, token=None):
@@ -13,24 +13,30 @@ async def tcp_echo_client(host, port, token=None):
     logging.info(f"{welcome.decode()}")
 
     if token:
-        await sign_in(token, reader, writer)
+        await authorize(token, reader, writer)
     else:
-        name = input("pick a name: ")
-        await sign_up(name, reader, writer)
+        name = sanitize(input("pick a name: "))
+        await register(name, reader, writer)
 
     try:
         while True:
-            message = input("Send: ")
-            writer.write(f"{message}\n\n".encode())
-            await writer.drain()
-            data = await reader.readline()
-            logging.info(f"{data.decode()}")
-    except:
+            message = sanitize(input("Send: "))
+            await submit_message(message, reader, writer)
+    except Exception as e:
+        print(e.__class__.__name__)
+        print(e)
         writer.close()
         await writer.wait_closed()
 
 
-async def sign_in(token, r, w):
+async def submit_message(message, r, w):
+    w.write(f"{message}\n\n".encode())
+    await w.drain()
+    data = await r.readline()
+    logging.info(f"{data.decode()}")
+
+
+async def authorize(token, r, w):
     w.write(f"{token}\n".encode())
     await w.drain()
 
@@ -40,8 +46,8 @@ async def sign_in(token, r, w):
         raise ValueError("Invalid token. Check or register new.")
 
 
-async def sign_up(name, r, w):
-    w.write(f"\n".encode())
+async def register(name, r, w):
+    w.write("\n".encode())
     await w.drain()
 
     data = await r.readline()
@@ -54,7 +60,7 @@ async def sign_up(name, r, w):
     user_info_dict = json.loads(info_json)
     await save_token(user_info_dict)
 
-    w.write(f"\n".encode())
+    w.write("\n".encode())
     await w.drain()
 
     data = await r.readline()
@@ -67,21 +73,30 @@ async def save_token(user_info_dict):
         await f.write(f"\ntoken={token}")
 
 
+def sanitize(string):
+    newstr = string
+    for ch in "\n\t\r\f\b\a":
+        newstr = newstr.replace(ch, "")
+    return newstr
+
+
 if __name__ == "__main__":
     args = get_args()
     if args.debug:
-        logging.basicConfig(level=logging.INFO, filename="sender.log", format="%(levelname)s:sender:%(message)s")
+        logging.basicConfig(
+            level=logging.INFO,
+            filename="sender.log",
+            format="%(levelname)s:sender:%(message)s",
+        )
     else:
-        logging.basicConfig(level=logging.WARNING, filename="sender.log", format="%(levelname)s:sender:%(message)s")    
+        logging.basicConfig(
+            level=logging.WARNING,
+            filename="sender.log",
+            format="%(levelname)s:sender:%(message)s",
+        )
 
     try:
-        asyncio.run(
-            tcp_echo_client(
-                args.host,
-                args.sender_port,
-                args.token
-            )
-        )
+        asyncio.run(tcp_echo_client(args.host, args.sender_port, args.token))
     except KeyboardInterrupt:
         logging.info("Client disconnected")
     except Exception as e:
