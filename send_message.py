@@ -1,16 +1,13 @@
 import logging
 import asyncio
 import aiofiles
+from utils import get_args
 import json
 
-logging.basicConfig(level=logging.INFO, filename="sender.log", format="%(levelname)s:sender:%(message)s")
-HOST = "minechat.dvmn.org"
-PORT = 5050
-TOKEN = "84e46b1a-5d99-11eb-8c47-0242ac110002d"
 
 
 async def tcp_echo_client(host, port, token=None):
-    reader, writer = await asyncio.open_connection(HOST, PORT)
+    reader, writer = await asyncio.open_connection(host, port)
 
     welcome = await reader.readline()
     logging.info(f"{welcome.decode()}")
@@ -71,11 +68,18 @@ async def save_token(user_info_dict):
 
 
 if __name__ == "__main__":
+    args = get_args()
+    if args.debug:
+        logging.basicConfig(level=logging.INFO, filename="sender.log", format="%(levelname)s:sender:%(message)s")
+    else:
+        logging.basicConfig(level=logging.WARNING, filename="sender.log", format="%(levelname)s:sender:%(message)s")    
+
     try:
         asyncio.run(
             tcp_echo_client(
-                HOST,
-                PORT,
+                args.host,
+                args.sender_port,
+                args.token
             )
         )
     except KeyboardInterrupt:
