@@ -40,7 +40,7 @@ async def sign_in(token, r, w):
     response_info = (await r.readline()).decode().strip()
     logging.info(f"res is {response_info}")
     if not json.loads(response_info):
-        raise Exception()
+        raise ValueError("Invalid token. Check or register new.")
 
 
 async def sign_up(name, r, w):
@@ -67,7 +67,7 @@ async def sign_up(name, r, w):
 async def save_token(user_info_dict):
     async with aiofiles.open("./config.txt", mode="a", encoding="utf-8") as f:
         token = user_info_dict["account_hash"]
-        await f.write(f"token={token}")
+        await f.write(f"\ntoken={token}")
 
 
 if __name__ == "__main__":
