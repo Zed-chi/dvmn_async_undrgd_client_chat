@@ -2,21 +2,7 @@
 import asyncio
 import aiofiles
 from datetime import datetime
-import configargparse
-
-
-def get_args():
-    p = configargparse.ArgParser(
-        default_config_files=[
-            "./config.txt",
-        ]
-    )
-    p.add(
-        "--host", required=True, help="host address"
-    )  # this option can be set in a config file because it starts with '--'
-    p.add("--port", required=True, help="port of the host")
-    p.add("--log_path", required=True, help="history log path")
-    return p.parse_args()
+from utils import get_args
 
 
 async def tcp_echo_client(args):
