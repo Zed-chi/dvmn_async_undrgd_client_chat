@@ -1,18 +1,17 @@
 import asyncio
-import logging
 import json
-
+import logging
 import aiofiles
 from utils import get_args
 
 
-async def tcp_echo_client(args):
-    reader, writer = await asyncio.open_connection(args.host, args.port)
+async def tcp_echo_client(args):    
+    reader, writer = await asyncio.open_connection(args.host, args.sender_port)
 
     welcome = await reader.readline()
     log(f"{welcome.decode()}")
 
-    if "token" in args:
+    if "token" in args and args.token:
         await authorize(args.token, reader, writer)
     else:
         await register(get_name(args), reader, writer)
@@ -31,12 +30,13 @@ async def submit_message(message, reader, writer):
         return
     writer.write(f"{message}\n\n".encode())
     await writer.drain()
+
     data = await reader.readline()
     log(f"{data.decode()}")
 
 
 def get_name(args):
-    if "name" in args:
+    if "name" in args and args.name:
         return args.name
     while True:
         name = sanitize(input("Type a name to register: "))
@@ -88,9 +88,13 @@ def sanitize(string):
     return newstr
 
 
-def log(message, args):
-    if "sender_log_path" in args:
-        logging.info(message)
+def log(message):
+    try:
+        if "sender_log_path" in args:
+            logging.info(message)
+    except NameError:
+        pass
+
 
 
 if __name__ == "__main__":
@@ -105,6 +109,6 @@ if __name__ == "__main__":
     try:
         asyncio.run(tcp_echo_client(args))
     except KeyboardInterrupt:
-        logging.info("Client disconnected")
-    except Exception as e:
-        logging.info(e)
+        logging.info("Client disconnected")   
+    except ValueError:
+        logging.warning("Invalid token. Check or register new.")
