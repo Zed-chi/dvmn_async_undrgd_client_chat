@@ -6,65 +6,73 @@ import aiofiles
 from utils import get_args
 
 
-async def tcp_echo_client(host, port, token=None):
-    reader, writer = await asyncio.open_connection(host, port)
+async def tcp_echo_client(args):
+    reader, writer = await asyncio.open_connection(args.host, args.port)
 
     welcome = await reader.readline()
-    logging.info(f"{welcome.decode()}")
+    log(f"{welcome.decode()}")
 
-    if token:
-        await authorize(token, reader, writer)
+    if "token" in args:
+        await authorize(args.token, reader, writer)
     else:
-        name = sanitize(input("pick a name: "))
-        await register(name, reader, writer)
+        await register(get_name(args), reader, writer)
 
     try:
         while True:
             message = sanitize(input("Send: "))
             await submit_message(message, reader, writer)
-    except Exception as e:
-        print(e.__class__.__name__)
-        print(e)
+    finally:
         writer.close()
         await writer.wait_closed()
 
 
-async def submit_message(message, r, w):
-    w.write(f"{message}\n\n".encode())
-    await w.drain()
-    data = await r.readline()
-    logging.info(f"{data.decode()}")
+async def submit_message(message, reader, writer):
+    if not message:
+        return
+    writer.write(f"{message}\n\n".encode())
+    await writer.drain()
+    data = await reader.readline()
+    log(f"{data.decode()}")
 
 
-async def authorize(token, r, w):
-    w.write(f"{token}\n".encode())
-    await w.drain()
+def get_name(args):
+    if "name" in args:
+        return args.name
+    while True:
+        name = sanitize(input("Type a name to register: "))
+        if name:
+            return name
 
-    response_info = (await r.readline()).decode().strip()
-    logging.info(f"res is {response_info}")
+
+async def authorize(token, reader, writer):
+    writer.write(f"{token}\n".encode())
+    await writer.drain()
+
+    response_info = (await reader.readline()).decode().strip()
+    log(f"res is {response_info}")
     if not json.loads(response_info):
         raise ValueError("Invalid token. Check or register new.")
 
 
-async def register(name, r, w):
-    w.write("\n".encode())
-    await w.drain()
+async def register(name, reader, writer):
+    writer.write("\n".encode())
+    await writer.drain()
 
-    data = await r.readline()
-    logging.info(f"{data.decode()}")
+    data = await reader.readline()
+    log(f"{data.decode()}")
 
-    w.write(f"{name}\n\n".encode())
-    await w.drain()
+    writer.write(f"{name}\n\n".encode())
+    await writer.drain()
 
-    info_json = (await r.readline()).decode().strip()
+    info_json = (await reader.readline()).decode().strip()
     user_info_dict = json.loads(info_json)
     await save_token(user_info_dict)
 
-    w.write("\n".encode())
-    await w.drain()
+    writer.write("\n".encode())
+    await writer.drain()
 
-    data = await r.readline()
-    logging.info(f"{data.decode()}")
+    data = await reader.readline()
+    log(f"{data.decode()}")
 
 
 async def save_token(user_info_dict):
@@ -75,28 +83,27 @@ async def save_token(user_info_dict):
 
 def sanitize(string):
     newstr = string
-    for ch in "\n\t\r\f\b\a":
+    for ch in ["\\n", "\\t", "\\r", "\\f", "\\b", "\\a", "\\"]:
         newstr = newstr.replace(ch, "")
     return newstr
 
 
+def log(message, args):
+    if "sender_log_path" in args:
+        logging.info(message)
+
+
 if __name__ == "__main__":
     args = get_args()
-    if args.debug:
+    if "sender_log_path" in args:
         logging.basicConfig(
             level=logging.INFO,
-            filename="sender.log",
-            format="%(levelname)s:sender:%(message)s",
-        )
-    else:
-        logging.basicConfig(
-            level=logging.WARNING,
-            filename="sender.log",
+            filename=args.sender_log_path,
             format="%(levelname)s:sender:%(message)s",
         )
 
     try:
-        asyncio.run(tcp_echo_client(args.host, args.sender_port, args.token))
+        asyncio.run(tcp_echo_client(args))
     except KeyboardInterrupt:
         logging.info("Client disconnected")
     except Exception as e:
