@@ -20,8 +20,8 @@
 - установка зависимостей командой `pip -r requirements.txt` из корня папки. (либо pip3/pip3.x)
 
 ## Запуск:
-`$ python3 listen-minechat.py --host 192.168.0.1 \
---port 5001 --history_path ~/minechat.history`
+`$ python listen-minechat.py --host 192.168.0.1 \
+--port 5001 --history_path ~/minechat.history` (либо python3/python3.x)
 
 Список аргументов скрипта просмотра сообщений:
 * host - адрес ресурса к которому нужно подключиться (обязателен).
