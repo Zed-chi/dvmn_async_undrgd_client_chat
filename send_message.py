@@ -2,24 +2,51 @@ import asyncio
 import json
 import logging
 import aiofiles
-from utils import get_args
+import configargparse
 
 
-async def tcp_echo_client(args):    
+def get_args():
+    p = configargparse.ArgParser(
+        default_config_files=[
+            "./sender_config.txt",
+        ],
+    )
+    p.add(
+        "--host",
+        required=False,
+        help="host address",
+        default="minechat.dvmn.org",
+    )
+    p.add("--port", required=False, help="port of sender client", default=5050)
+    p.add("--token", help="token", required=False)
+    p.add(
+        "--log_path",
+        required=False,
+        help="sender log path",
+        default="./sender.log",
+    )
+    p.add(
+        "--name", required=False, help="name for registration", default="user"
+    )
+    p.add("--message", required=True, help="message to send")
+
+    return p.parse_args()
+
+
+async def send_message(args):
     reader, writer = await asyncio.open_connection(args.host, args.sender_port)
 
     welcome = await reader.readline()
     log(f"{welcome.decode()}")
 
-    if "token" in args and args.token:
+    if args.token:
         await authorize(args.token, reader, writer)
     else:
         await register(get_name(args), reader, writer)
 
     try:
-        while True:
-            message = sanitize(input("Send: "))
-            await submit_message(message, reader, writer)
+        message = sanitize(args.message)
+        await submit_message(message, reader, writer)
     finally:
         writer.close()
         await writer.wait_closed()
@@ -36,7 +63,7 @@ async def submit_message(message, reader, writer):
 
 
 def get_name(args):
-    if "name" in args and args.name:
+    if args.name:
         return args.name
     while True:
         name = sanitize(input("Type a name to register: "))
@@ -89,26 +116,20 @@ def sanitize(string):
 
 
 def log(message):
-    try:
-        if "sender_log_path" in args:
-            logging.info(message)
-    except NameError:
-        pass
-
+    logging.info(message)
 
 
 if __name__ == "__main__":
     args = get_args()
-    if "sender_log_path" in args:
-        logging.basicConfig(
-            level=logging.INFO,
-            filename=args.sender_log_path,
-            format="%(levelname)s:sender:%(message)s",
-        )
+    logging.basicConfig(
+        level=logging.INFO,
+        filename=args.sender_log_path,
+        format="%(levelname)s:sender:%(message)s",
+    )
 
     try:
-        asyncio.run(tcp_echo_client(args))
+        asyncio.run(send_message(args))
     except KeyboardInterrupt:
-        logging.info("Client disconnected")   
+        logging.info("Client disconnected")
     except ValueError:
         logging.warning("Invalid token. Check or register new.")

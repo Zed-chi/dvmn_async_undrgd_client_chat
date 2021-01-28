@@ -2,7 +2,30 @@ import asyncio
 from datetime import datetime
 
 import aiofiles
-from utils import get_args
+import configargparse
+
+
+def get_args():
+    p = configargparse.ArgParser(
+        default_config_files=[
+            "./listener_config.txt",
+        ],
+    )
+    p.add(
+        "--host",
+        required=False,
+        help="host address",
+        default="minechat.dvmn.org",
+    )
+    p.add("--port", required=False, help="port of sender client", default=5000)
+    p.add(
+        "--log_path",
+        required=False,
+        help="sender log path",
+        default="./listener.log",
+    )
+
+    return p.parse_args()
 
 
 async def tcp_echo_client(args):
