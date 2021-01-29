@@ -5,10 +5,13 @@ import aiofiles
 import configargparse
 
 
+CONFIG_FILEPATH = "./listener_config.cfg"
+
+
 def get_args():
     p = configargparse.ArgParser(
         default_config_files=[
-            "./listener_config.txt",
+            CONFIG_FILEPATH,
         ],
     )
     p.add(
@@ -28,7 +31,7 @@ def get_args():
     return p.parse_args()
 
 
-async def tcp_echo_client(args):
+async def listen_chat(args):
     reader, _ = await asyncio.open_connection(args.host, args.port)
 
     while True:
@@ -48,6 +51,6 @@ async def tcp_echo_client(args):
 if __name__ == "__main__":
     args = get_args()
     try:
-        asyncio.run(tcp_echo_client(args))
+        asyncio.run(listen_chat(args))
     except KeyboardInterrupt:
         print("Client disconnected")
