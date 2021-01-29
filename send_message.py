@@ -4,11 +4,13 @@ import logging
 import aiofiles
 import configargparse
 
+CONFIG_FILEPATH = "./sender_config.cfg"
+
 
 def get_args():
     p = configargparse.ArgParser(
         default_config_files=[
-            "./sender_config.txt",
+            CONFIG_FILEPATH,
         ],
     )
     p.add(
@@ -34,10 +36,9 @@ def get_args():
 
 
 async def send_message(args):
-    reader, writer = await asyncio.open_connection(args.host, args.sender_port)
+    reader, writer = await asyncio.open_connection(args.host, args.port)
 
-    welcome = await reader.readline()
-    log(f"{welcome.decode()}")
+    log((await reader.readline()).decode())
 
     if args.token:
         await authorize(args.token, reader, writer)
@@ -58,8 +59,7 @@ async def submit_message(message, reader, writer):
     writer.write(f"{message}\n\n".encode())
     await writer.drain()
 
-    data = await reader.readline()
-    log(f"{data.decode()}")
+    log((await reader.readline()).decode())
 
 
 def get_name(args):
@@ -85,8 +85,7 @@ async def register(name, reader, writer):
     writer.write("\n".encode())
     await writer.drain()
 
-    data = await reader.readline()
-    log(f"{data.decode()}")
+    log((await reader.readline()).decode())
 
     writer.write(f"{name}\n\n".encode())
     await writer.drain()
@@ -98,12 +97,11 @@ async def register(name, reader, writer):
     writer.write("\n".encode())
     await writer.drain()
 
-    data = await reader.readline()
-    log(f"{data.decode()}")
+    log((await reader.readline()).decode())
 
 
 async def save_token(user_info_dict):
-    async with aiofiles.open("./config.txt", mode="a", encoding="utf-8") as f:
+    async with aiofiles.open(CONFIG_FILEPATH, mode="a", encoding="utf-8") as f:
         token = user_info_dict["account_hash"]
         await f.write(f"\ntoken={token}")
 
@@ -121,9 +119,10 @@ def log(message):
 
 if __name__ == "__main__":
     args = get_args()
+
     logging.basicConfig(
         level=logging.INFO,
-        filename=args.sender_log_path,
+        filename=args.log_path,
         format="%(levelname)s:sender:%(message)s",
     )
 
