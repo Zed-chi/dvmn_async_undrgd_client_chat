@@ -1,7 +1,9 @@
 import asyncio
 import json
 import logging
+
 import aiofiles
+
 import configargparse
 
 CONFIG_FILEPATH = "./sender_config.cfg"
