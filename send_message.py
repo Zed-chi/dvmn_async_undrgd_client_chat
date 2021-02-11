@@ -48,7 +48,8 @@ async def send_message(args):
     if args.token:
         await authorize(args.token, reader, writer)
     else:
-        await register(get_name(args), reader, writer)
+        name = sanitize(args.name) if args.name else get_name()
+        await register(name, reader, writer)
 
     try:
         message = sanitize(args.message)
@@ -68,14 +69,11 @@ async def submit_message(message, reader, writer):
     logging.info(data.decode())
 
 
-def get_name(args):
-    if args.name:
-        return args.name
+def get_name():    
     while True:
         name = sanitize(input("Type a name to register: "))
         if name:
             return name
-
 
 async def authorize(token, reader, writer):
     writer.write(f"{token}\n".encode())
