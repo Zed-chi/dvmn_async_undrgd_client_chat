@@ -33,20 +33,25 @@ def get_args():
 
 
 async def listen_chat(args):
-    reader, _ = await asyncio.open_connection(args.host, args.port)
+    reader, writer = await asyncio.open_connection(args.host, args.port)
 
-    while True:
-        data = await reader.readline()
-        message = data.decode("utf-8")
-        now = datetime.now().strftime("[%d.%m.%y %H:%M]")
-        if "history_path" in args:
-            async with aiofiles.open(
-                args.history_path,
-                mode="a",
-                encoding="utf-8",
-            ) as f:
-                await f.write(f"{now} {message}")
-        print(f"{now} {message.strip()}")
+    try:
+        while True:
+            data = await reader.readline()
+            message = data.decode("utf-8")
+            now = datetime.now().strftime("[%d.%m.%y %H:%M]")
+            if "history_path" in args:
+                async with aiofiles.open(
+                    args.history_path,
+                    mode="a",
+                    encoding="utf-8",
+                ) as f:
+                    await f.write(f"{now} {message}")
+            print(f"{now} {message.strip()}")
+    finally:
+        writer.close()
+        await writer.wait_closed()
+    
 
 
 if __name__ == "__main__":
