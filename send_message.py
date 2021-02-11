@@ -100,7 +100,7 @@ async def register(name, reader, writer):
 
     info_json = (await reader.readline()).decode().strip()
     user_info_dict = json.loads(info_json)
-    await save_token(user_info_dict)
+    await save_token(user_info_dict["account_hash"])
 
     writer.write("\n".encode())
     await writer.drain()
@@ -109,9 +109,9 @@ async def register(name, reader, writer):
     logging.info(data.decode())
 
 
-async def save_token(user_info_dict):
+async def save_token(account_hash):
     async with aiofiles.open(CONFIG_FILEPATH, mode="a", encoding="utf-8") as f:
-        token = user_info_dict["account_hash"]
+        token = account_hash
         await f.write(f"\ntoken={token}")
 
 
