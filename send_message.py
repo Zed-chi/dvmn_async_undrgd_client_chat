@@ -21,7 +21,9 @@ def get_args():
         help="host address",
         default="minechat.dvmn.org",
     )
-    parser.add("--port", required=False, help="port of sender client", default=5050)
+    parser.add(
+        "--port", required=False, help="port of sender client", default=5050
+    )
     parser.add("--token", help="token", required=False)
     parser.add(
         "--log_path",
@@ -32,7 +34,7 @@ def get_args():
     parser.add(
         "--name", required=False, help="name for registration", default="user"
     )
-    parser.add("--message", required=True, help="message to send")
+    parser.add("message", help="message to send")
 
     return parser.parse_args()
 
