@@ -10,26 +10,26 @@ CONFIG_FILEPATH = "./listener_config.cfg"
 
 
 def get_args():
-    p = configargparse.ArgParser(
+    parser = configargparse.ArgParser(
         default_config_files=[
             CONFIG_FILEPATH,
         ],
     )
-    p.add(
+    parser.add(
         "--host",
         required=False,
         help="host address",
         default="minechat.dvmn.org",
     )
-    p.add("--port", required=False, help="port of sender client", default=5000)
-    p.add(
+    parser.add("--port", required=False, help="port of sender client", default=5000)
+    parser.add(
         "--log_path",
         required=False,
         help="sender log path",
         default="./listener.log",
     )
 
-    return p.parse_args()
+    return parser.parse_args()
 
 
 async def listen_chat(args):
