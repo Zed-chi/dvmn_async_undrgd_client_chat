@@ -42,7 +42,8 @@ def get_args():
 async def send_message(args):
     reader, writer = await asyncio.open_connection(args.host, args.port)
 
-    log((await reader.readline()).decode())
+    data = await reader.readline()
+    logging.info(data.decode())
 
     if args.token:
         await authorize(args.token, reader, writer)
@@ -63,7 +64,8 @@ async def submit_message(message, reader, writer):
     writer.write(f"{message}\n\n".encode())
     await writer.drain()
 
-    log((await reader.readline()).decode())
+    data = await reader.readline()
+    logging.info(data.decode())
 
 
 def get_name(args):
@@ -79,8 +81,9 @@ async def authorize(token, reader, writer):
     writer.write(f"{token}\n".encode())
     await writer.drain()
 
-    response_info = (await reader.readline()).decode().strip()
-    log(f"res is {response_info}")
+    data = await reader.readline()
+    response_info = data.decode().strip()
+    logging.info(f"respose is {response_info}")
     if not json.loads(response_info):
         raise ValueError("Invalid token. Check or register new.")
 
@@ -89,7 +92,8 @@ async def register(name, reader, writer):
     writer.write("\n".encode())
     await writer.drain()
 
-    log((await reader.readline()).decode())
+    data = await reader.readline()
+    logging.info(data.decode())
 
     writer.write(f"{name}\n\n".encode())
     await writer.drain()
@@ -101,7 +105,8 @@ async def register(name, reader, writer):
     writer.write("\n".encode())
     await writer.drain()
 
-    log((await reader.readline()).decode())
+    data = await reader.readline()
+    logging.info(data.decode())
 
 
 async def save_token(user_info_dict):
@@ -115,10 +120,6 @@ def sanitize(string):
     for ch in ["\\n", "\\t", "\\r", "\\f", "\\b", "\\a", "\\"]:
         newstr = newstr.replace(ch, "")
     return newstr
-
-
-def log(message):
-    logging.info(message)
 
 
 if __name__ == "__main__":
