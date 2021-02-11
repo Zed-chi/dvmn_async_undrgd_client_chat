@@ -3,7 +3,6 @@ import json
 import logging
 
 import aiofiles
-
 import configargparse
 
 CONFIG_FILEPATH = "./sender_config.cfg"
@@ -48,7 +47,7 @@ async def send_message(args):
     if args.token:
         await authorize(args.token, reader, writer)
     else:
-        name = sanitize(args.name) if args.name else get_name()
+        name = sanitize(args.name) if args.name else get_name_from_input()
         await register(name, reader, writer)
 
     try:
@@ -69,11 +68,12 @@ async def submit_message(message, reader, writer):
     logging.info(data.decode())
 
 
-def get_name():    
+def get_name_from_input():
     while True:
         name = sanitize(input("Type a name to register: "))
         if name:
             return name
+
 
 async def authorize(token, reader, writer):
     writer.write(f"{token}\n".encode())
@@ -96,7 +96,8 @@ async def register(name, reader, writer):
     writer.write(f"{name}\n\n".encode())
     await writer.drain()
 
-    info_json = (await reader.readline()).decode().strip()
+    data = await reader.readline()    
+    info_json = data.decode().strip()
     user_info_dict = json.loads(info_json)
     await save_token(user_info_dict["account_hash"])
 
@@ -109,8 +110,7 @@ async def register(name, reader, writer):
 
 async def save_token(account_hash):
     async with aiofiles.open(CONFIG_FILEPATH, mode="a", encoding="utf-8") as f:
-        token = account_hash
-        await f.write(f"\ntoken={token}")
+        await f.write(f"\ntoken={account_hash}")
 
 
 def sanitize(string):
