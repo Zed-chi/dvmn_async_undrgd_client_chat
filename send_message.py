@@ -21,7 +21,7 @@ def get_args():
         default="minechat.dvmn.org",
     )
     parser.add(
-        "--port", required=False, help="port of sender client", default=5050
+        "--port", required=False, help="port of sender client", default=5050,
     )
     parser.add("--token", help="token", required=False)
     parser.add(
@@ -31,7 +31,7 @@ def get_args():
         default="./sender.log",
     )
     parser.add(
-        "--name", required=False, help="name for registration", default="user"
+        "--name", required=False, help="name for registration", default="user",
     )
     parser.add("message", help="message to send")
 
@@ -96,7 +96,7 @@ async def register(name, reader, writer):
     writer.write(f"{name}\n\n".encode())
     await writer.drain()
 
-    data = await reader.readline()    
+    data = await reader.readline()
     info_json = data.decode().strip()
     user_info_dict = json.loads(info_json)
     await save_token(user_info_dict["account_hash"])
