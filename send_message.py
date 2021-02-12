@@ -47,12 +47,13 @@ async def send_message(args):
     if args.token:
         await authorize(args.token, reader, writer)
     else:
-        name = sanitize(args.name) if args.name else get_name_from_input()
-        await register(name, reader, writer)
+        name = args.name if args.name else get_name_from_input()
+        sanitized_name = sanitize(name)
+        await register(sanitized_name, reader, writer)
 
     try:
-        message = sanitize(args.message)
-        await submit_message(message, reader, writer)
+        sanitized_message = sanitize(args.message)
+        await submit_message(sanitized_message, reader, writer)
     finally:
         writer.close()
         await writer.wait_closed()
@@ -70,7 +71,7 @@ async def submit_message(message, reader, writer):
 
 def get_name_from_input():
     while True:
-        name = sanitize(input("Type a name to register: "))
+        name = input("Type a name to register: ").strip()
         if name:
             return name
 
